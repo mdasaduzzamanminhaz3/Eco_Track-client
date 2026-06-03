@@ -18,5 +18,20 @@ export default function ProtectedRoute() {
   }
 
 
-  return authTokens?.access ? <Outlet /> : <Navigate to="/login" replace />;
+  let hasAccess = authTokens?.access;
+  
+  if (!hasAccess) {
+    const localTokens = localStorage.getItem("authTokens");
+    if (localTokens) {
+      try {
+        const parsed = JSON.parse(localTokens);
+        hasAccess = parsed?.access; 
+      } catch (e) {
+        hasAccess = false;
+        console.log(e);
+      }
+    }
+  }
+
+  return hasAccess ? <Outlet /> : <Navigate to="/login" replace />;
 }

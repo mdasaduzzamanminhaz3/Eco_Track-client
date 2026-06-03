@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
 
-export function Gauge({ pct }) {
-  const E = "#10B981";
+function Gauge({ pct }) {
   const r = 50, cx = 70, cy = 70, circ = 2 * Math.PI * r;
   const dash = (pct / 100) * circ;
+  const E = "#10B981";
+// const LIME = "#84CC16";
   return (
     <svg width={140} height={140} viewBox="0 0 140 140">
       <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="12" />
@@ -18,3 +19,4 @@ export function Gauge({ pct }) {
     </svg>
   );
 }
+export default Gauge;

@@ -1,7 +1,7 @@
-
-export function AreaChart({ data, labels }) {
-  const E = "#10B981";
+function AreaChart({ data, labels }) {
   const W = 500, H = 160, px = 28, py = 16;
+  const E = "#10B981";
+// const LIME = "#84CC16";
   const max = Math.max(...data) * 1.1;
   const pts = data.map((v, i) => [
     px + (i / (data.length - 1)) * (W - px * 2),
@@ -31,3 +31,4 @@ export function AreaChart({ data, labels }) {
     </svg>
   );
 }
+export default AreaChart;

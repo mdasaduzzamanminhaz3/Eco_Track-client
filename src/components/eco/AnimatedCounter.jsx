@@ -1,31 +1,41 @@
-import { useEffect, useRef, useState } from "react";
-import { motion, useInView } from "framer-motion";
-export function AnimatedCounter({ value, duration = 1.4, decimals = 0, prefix = "", suffix = "", className, }) {
-    const ref = useRef(null);
-    const inView = useInView(ref, { once: true, margin: "-40px" });
-    const [display, setDisplay] = useState(0);
-    useEffect(() => {
-        if (!inView)
-            return;
-        const start = performance.now();
-        const from = 0;
-        let raf = 0;
-        const step = (t) => {
-            const p = Math.min(1, (t - start) / (duration * 1000));
-            const eased = 1 - Math.pow(1 - p, 3);
-            setDisplay(from + (value - from) * eased);
-            if (p < 1)
-                raf = requestAnimationFrame(step);
-        };
-        raf = requestAnimationFrame(step);
-        return () => cancelAnimationFrame(raf);
-    }, [inView, value, duration]);
-    return (<motion.span ref={ref} className={className}>
+import { useEffect, useState } from "react";
+
+function Counter({ to, decimals = 0, prefix = "", suffix = "" }) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let start = 0;
+    const end = parseFloat(to);
+    if (start === end) return;
+
+    const totalMiliseconds = 1000;
+    const frameRate = 1000 / 60;
+    const totalFrames = Math.round(totalMiliseconds / frameRate);
+    let frame = 0;
+
+    const counter = setInterval(() => {
+      frame++;
+      const progress = frame / totalFrames;
+      // EaseOut Quad formula
+      const currentCount = start + (end - start) * progress * (2 - progress);
+      
+      setCount(currentCount);
+
+      if (frame === totalFrames) {
+        clearInterval(counter);
+        setCount(end);
+      }
+    }, frameRate);
+
+    return () => clearInterval(counter);
+  }, [to]);
+
+  return (
+    <span>
       {prefix}
-      {display.toLocaleString(undefined, {
-            minimumFractionDigits: decimals,
-            maximumFractionDigits: decimals,
-        })}
+      {count.toFixed(decimals)}
       {suffix}
-    </motion.span>);
+    </span>
+  );
 }
+export { Counter };

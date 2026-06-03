@@ -52,15 +52,27 @@ const useAuth = () => {
         };
     },[authTokens]);
 
-    const handleAPIError = (error, defaultMessage = "Something went wrong ! Try again") => {
-        if(error.response && error.response.data){
-            const errorMessage = Object.values(error.response.data).flat().join("\n");
-            setError(errorMessage);
-            return {success: false, message: errorMessage};
+const handleAPIError = (error, defaultMessage = "Something went wrong ! Try again") => {
+        if (error.response && error.response.data) {
+            // 🎯 ফিক্স: যদি ব্যাকএন্ড থেকে 'detail' মেসেজ আসে তবে সেটা নেবে, না হলে অবজেক্টের প্রথম এররটা দেখাবে
+            const data = error.response.data;
+            let errorMessage = defaultMessage;
 
+            if (data.detail) {
+                errorMessage = data.detail;
+            } else if (typeof data === 'object') {
+                // কোনো অবজেক্ট বা অ্যারে আসলে সেটাকে সেফলি স্ট্রিং বানিয়ে দেবে
+                errorMessage = Object.values(data).flat().join("\n");
+            } else if (typeof data === 'string') {
+                errorMessage = data;
+            }
+
+            setError(errorMessage);
+            return { success: false, message: errorMessage };
         }
+        
         setError(defaultMessage);
-        return {success: false, message: defaultMessage};
+        return { success: false, message: defaultMessage };
     };
 
 
@@ -99,10 +111,9 @@ const useAuth = () => {
            const profile = await fetchUserProfile(response.data);
            if(profile){
                setUser(profile);
-
            }
 
-        return {success:true};
+        return {success:true, message: "Login successful !"};
         } catch (error) {
             const msg = error.response?.data.detail || "Login failed ! Please check your credentials and try again.";
             setError(msg);
