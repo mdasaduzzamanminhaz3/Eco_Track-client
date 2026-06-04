@@ -23,7 +23,7 @@ const useAuth = () => {
     const fetchUserProfile = async (tokensToUse= authTokens) => {
         if (!tokensToUse?.access) return null;
         try {
-            const response = await apiClient.get("/api/v1/auth/users/me/", {
+            const response = await apiClient.get("/auth/users/me/", {
                 headers: { Authorization: `Bearer ${tokensToUse.access}` },
             });
             return response.data;
@@ -80,7 +80,7 @@ const handleAPIError = (error, defaultMessage = "Something went wrong ! Try agai
     const updateUserProfile = async (data) => {
         setError("");
         try {
-            const response = await authApiClient.patch('/api/v1/auth/users/me/', data);
+            const response = await authApiClient.patch('/auth/users/me/', data);
             setUser(response.data);
             return {success: true, message: "Profile updated successfully"};
 
@@ -93,7 +93,7 @@ const handleAPIError = (error, defaultMessage = "Something went wrong ! Try agai
     const changePassword = async (data) => {
         setError("");
         try {
-            await authApiClient.post('/api/v1/auth/users/set_password/', data);
+            await authApiClient.post('/auth/users/set_password/', data);
             return {success: true, message: "Password changed successfully"};
         } catch (error) {
             return handleAPIError(error);
@@ -104,7 +104,7 @@ const handleAPIError = (error, defaultMessage = "Something went wrong ! Try agai
     const loginUser = async (userData) => {
         setError("");
         try {
-            const response = await apiClient.post('/api/v1/auth/jwt/create/', userData);
+            const response = await apiClient.post('/auth/jwt/create/', userData);
             setAuthTokens(response.data);
             localStorage.setItem('authTokens', JSON.stringify(response.data));
 
@@ -125,7 +125,7 @@ const handleAPIError = (error, defaultMessage = "Something went wrong ! Try agai
     const registerUser = async (userData) => {
         setError("");
         try {
-            await apiClient.post('/api/v1/auth/users/', userData);
+            await apiClient.post('/auth/users/', userData);
             return {success: true, message: "Registration successful ! Please login to continue."};
         } catch (error) {
             return handleAPIError(error, "Registration failed ! Please check your details and try again.");

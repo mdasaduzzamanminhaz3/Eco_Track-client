@@ -1,150 +1,124 @@
-import { useState, useEffect } from "react";
-import axios from "axios"; // অথবা আপনার প্রজেক্টের কাস্টম apiClient
+import React, { useEffect, useState } from "react";
+import authApiClient from "../../services/auth-api-client";
+import PickupMap from "./PickupMap";
 
-export function RecyclerOverview({ theme, dark }) {
+const RecyclerOverview = ({ theme, dark }) => {
   const [requests, setRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedPickup, setSelectedPickup] = useState(null); // মডাল কন্ট্রোল
-  const [actualWeight, setActualWeight] = useState("");
-  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [selectedJob, setSelectedJob] = useState(null);
 
-  // 🎯 ১. ব্যাকএন্ড থেকে সব সচল রিকোয়েস্ট লোড করার ক্লিন লজিক
   const fetchJobs = async (isMounted = true) => {
     try {
       if (isMounted) setLoading(true);
-      const tokenObj = localStorage.getItem("authTokens") ? JSON.parse(localStorage.getItem("authTokens")) : null;
-      const res = await axios.get("http://127.0.0.1:8000/api/pickup-requests/", {
-        headers: { Authorization: `Bearer ${tokenObj?.access}` }
-      });
-      
-      if (isMounted) {
-        // রিসাইক্লার শুধু পেন্ডিং এবং এক্সেপ্ট করা রিকোয়েস্টগুলো মেইন স্ক্রিনে দেখবে
-        const activeJobs = res.data.filter(job => job.status === "PENDING" || job.status === "ACCEPTED");
-        setRequests(activeJobs);
-      }
+      setError(null);
+      const res = await authApiClient.get("pickups/");
+      if (isMounted) setRequests(res.data);
     } catch (err) {
       console.error("Error fetching jobs:", err);
+      if (isMounted) setError("Failed to fetch pickup requests.");
     } finally {
       if (isMounted) setLoading(false);
     }
   };
 
-  // 🎯 ফিক্স: useEffect এর ভেতরে সরাসরি বা সিনক্রোনাসলি স্টেট চেঞ্জ ব্লক করা হয়েছে
   useEffect(() => {
     let isMounted = true;
-
-    const loadData = async () => {
-      await fetchJobs(isMounted);
-    };
-
-    loadData();
-
-    // Cleanup ফাংশন: কম্পোনেন্ট আনমাউন্ট হয়ে গেলে ব্যাকগ্রাউন্ড স্টেট আপডেট বন্ধ করবে
-    return () => {
-      isMounted = false;
-    };
+    fetchJobs(isMounted);
+    return () => { isMounted = false; };
   }, []);
 
-  // ২. এক্সেপ্ট বা কালেক্টেড একশন ফায়ার করা
-  const handleAction = async (id, statusName, weight = null) => {
+  const handleAcceptJob = async (jobId) => {
     try {
-      setError("");
-      const tokenObj = localStorage.getItem("authTokens") ? JSON.parse(localStorage.getItem("authTokens")) : null;
-      
-      const payload = { status: statusName };
-      if (weight) payload.actual_weight = parseFloat(weight);
-
-      await axios.patch(`http://127.0.0.1:8000/api/pickup-requests/${id}/recycler-update/`, payload, {
-        headers: { Authorization: `Bearer ${tokenObj?.access}` }
-      });
-
-      setSelectedPickup(null);
-      setActualWeight("");
-      fetchJobs(true); // লিস্ট রিফ্রেশ করা হলো
+      await authApiClient.patch(`pickups/${jobId}/`, { status: "ACCEPTED" });
+      alert("Job Accepted Successfully!");
+      fetchJobs();
     } catch (err) {
-      if (err.response?.data?.actual_weight) {
-        setError(err.response.data.actual_weight[0]);
-      } else {
-        alert("Something went wrong!");
-      }
+      alert("Failed to accept the job.");
     }
   };
 
-  if (loading) {
-    return <div style={{ color: theme.txt, padding: 24, textAlign: "center" }}>Loading jobs...</div>;
-  }
-
   return (
-    <div style={{ padding: "24px", color: theme.txt }}>
-      <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: "24px", fontWeight: "bold" }}>Recycler Collection Jobs</h2>
-        <p style={{ color: theme.muted, fontSize: "14px" }}>Accept pickup tasks and verify actual weight upon collection.</p>
+    <div className="p-6 max-w-7xl mx-auto">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 style={{ color: theme.txt }} className="text-2xl font-bold">Recycler Dashboard</h2>
+          <p style={{ color: theme.muted }} className="text-sm">Manage and view available waste pickup requests.</p>
+        </div>
       </div>
 
-      {/* রিকোয়েস্ট লিস্ট */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        {requests.length === 0 ? (
-          <div style={{ padding: 32, textAlign: "center", background: theme.card, borderRadius: 12, border: `1px solid ${theme.border}`, color: theme.muted }}>
-            No active pickup requests found.
-          </div>
-        ) : (
-          requests.map((job) => (
-            <div key={job.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: theme.card, padding: 20, borderRadius: 12, border: `1px solid ${theme.border}`, flexWrap: "wrap", gap: 16 }}>
-              <div style={{ flex: 1, minWidth: 250 }}>
-                <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
-                  <span style={{ background: "rgba(16,185,129,0.1)", color: "#10B981", padding: "2px 8px", borderRadius: 6, fontSize: 12, fontWeight: "bold" }}>
-                    {job.category_detail?.name || "Waste"}
-                  </span>
-                  <span style={{ color: theme.muted, fontSize: 12 }}>ID: #{job.id.substring(0,8)}</span>
+      {loading && <div style={{ color: theme.txt }} className="text-center py-10">Loading...</div>}
+      
+      {!loading && !error && requests.filter(j => j.status?.toUpperCase() === "PENDING").length === 0 ? (
+        <div style={{ color: theme.muted, borderColor: theme.sidebarBorder }} className="text-center py-16 border-2 border-dashed rounded-2xl">
+          No active pickup requests available.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {requests
+            .filter((job) => job.status?.toUpperCase() === "PENDING")
+            .map((job) => {
+              const wasteType = job.category_detail?.name || "General Waste";
+              const customerName = job.user?.first_name ? `${job.user.first_name} ${job.user.last_name || ""}`.trim() : (job.user?.email || "Anonymous User");
+
+              return (
+                <div
+                  key={job.id}
+                  style={{ 
+                    backgroundColor: dark ? "#132016" : "#F0FDF4",
+                    border: `1px solid ${dark ? "#166534" : "#DCFCE7"}`
+                  }}
+                  className="rounded-2xl p-5 shadow-sm transition flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex justify-between items-start mb-3">
+                      <span className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs font-semibold px-2.5 py-1 rounded-md uppercase">
+                        {wasteType}
+                      </span>
+                    </div>
+                    <h3 style={{ color: theme.txt }} className="font-bold text-base mb-1 truncate">{customerName}</h3>
+                    <p style={{ color: theme.muted }} className="text-sm mb-4">📍 {job.pickup_address || "No address"}</p>
+                  </div>
+
+                  <div className="flex gap-2 border-t pt-4" style={{ borderColor: dark ? "#166534" : "#DCFCE7" }}>
+                    <button
+                      onClick={() => setSelectedJob(job)}
+                      style={{ backgroundColor: dark ? "#1c4a2e" : "#e5e7eb", color: theme.txt }}
+                      className="flex-1 font-semibold py-2.5 px-3 rounded-xl text-xs transition"
+                    >
+                      🗺️ View Map
+                    </button>
+                    <button
+                      onClick={() => handleAcceptJob(job.id)}
+                      style={{ backgroundColor: "#10B981", color: "#fff" }}
+                      className="flex-1 font-semibold py-2.5 px-3 rounded-xl text-xs transition"
+                    >
+                      Accept Job
+                    </button>
+                  </div>
                 </div>
-                <p style={{ fontSize: 14, margin: "2px 0" }}><strong>User:</strong> {job.user?.email}</p>
-                <p style={{ fontSize: 13, color: theme.muted, margin: "2px 0" }}><strong>Address:</strong> {job.pickup_address}</p>
-                <p style={{ fontSize: 14, marginTop: 6, color: "#84CC16" }}>Est. Weight: <strong>{job.estimated_weight} KG</strong></p>
-              </div>
+              );
+            })}
+        </div>
+      )}
 
-              {/* অ্যাকশন বাটনসমূহ */}
-              <div>
-                {job.status === "PENDING" && (
-                  <button onClick={() => handleAction(job.id, "ACCEPTED")} style={{ background: "#10B981", color: "#fff", border: "none", padding: "8px 16px", borderRadius: 8, fontWeight: "600", cursor: "pointer" }}>
-                    Accept Job
-                  </button>
-                )}
-                {job.status === "ACCEPTED" && (
-                  <button onClick={() => setSelectedPickup(job)} style={{ background: "#3B82F6", color: "#fff", border: "none", padding: "8px 16px", borderRadius: 8, fontWeight: "600", cursor: "pointer" }}>
-                    Mark Collected
-                  </button>
-                )}
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* 🚨 ওজন ইনপুট দেওয়ার পপআপ মডাল */}
-      {selectedPickup && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 16 }}>
-          <div style={{ background: dark ? "#111d13" : "#fff", padding: 24, borderRadius: 16, width: "100%", maxWidth: 360, border: `1px solid ${theme.border}`, color: theme.txt }}>
-            <h3 style={{ fontSize: 18, fontWeight: "bold", marginBottom: 4 }}>Verify Collected Weight</h3>
-            <p style={{ fontSize: 13, color: theme.muted, marginBottom: 16 }}>User estimated: {selectedPickup.estimated_weight} KG</p>
-
-            {error && <p style={{ color: "#EF4444", fontSize: 12, marginBottom: 8 }}>{error}</p>}
-
-            <input 
-              type="number" 
-              step="0.1"
-              value={actualWeight}
-              onChange={(e) => setActualWeight(e.target.value)}
-              placeholder="Enter exact weight in KG"
-              style={{ width: "100%", padding: 12, background: dark ? "rgba(255,255,255,0.05)" : "#f3f4f6", border: `1px solid ${theme.border}`, borderRadius: 10, color: theme.txt, outline: "none", marginBottom: 16 }}
-            />
-
-            <div style={{ display: "flex", justifyContent: "end", gap: 12 }}>
-              <button onClick={() => { setSelectedPickup(null); setActualWeight(""); setError(""); }} style={{ background: "none", border: "none", color: theme.muted, cursor: "pointer", fontWeight: "600" }}>Cancel</button>
-              <button onClick={() => handleAction(selectedPickup.id, "COLLECTED", actualWeight)} style={{ background: "#10B981", color: "#fff", border: "none", padding: "8px 16px", borderRadius: 8, fontWeight: "600", cursor: "pointer" }}>Confirm</button>
+      {selectedJob && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[50] p-4">
+          <div style={{ backgroundColor: dark ? "#0E1F12" : "#ffffff" }} className="w-full max-w-4xl h-[80vh] rounded-3xl p-6 relative flex flex-col shadow-2xl">
+            <button onClick={() => setSelectedJob(null)} className="absolute top-4 right-4 font-bold text-xl">✕</button>
+            <div className="flex-1 overflow-hidden rounded-2xl">
+              <PickupMap
+                pickupLat={selectedJob.latitude} 
+                pickupLng={selectedJob.longitude} 
+                pickupAddress={selectedJob.pickup_address}
+                customerName={selectedJob.user?.email}
+              />
             </div>
           </div>
         </div>
       )}
     </div>
   );
-}
+};
+
+export default RecyclerOverview;

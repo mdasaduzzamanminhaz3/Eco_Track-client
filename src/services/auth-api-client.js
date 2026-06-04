@@ -1,7 +1,8 @@
 import axios from "axios";
 
 const authApiClient = axios.create({
-    baseURL: "http://localhost:8000"
+    // baseURL: "http://localhost:8000/api/v1",
+    baseURL: "http://127.0.0.1:8000/api/v1",
 });
 
 
@@ -14,7 +15,7 @@ authApiClient.interceptors.request.use(
             const tokenObj = JSON.parse(storeTokens);
             if(tokenObj && tokenObj.access){
 
-            config.headers.Authorization = `JWT ${tokenObj.access}`;
+            config.headers.Authorization = `Bearer ${tokenObj.access}`;
             }
 
         }
