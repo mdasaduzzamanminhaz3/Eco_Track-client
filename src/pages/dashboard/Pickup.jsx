@@ -1,13 +1,86 @@
-import  { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Ic } from "../../components/ui/Icons";
+import authApiClient from "../../services/auth-api-client";
 
 export function Pickup({ theme, dark }) {
   const [step, setStep] = useState(1);
   const [cat, setCat] = useState("");
   const [done, setDone] = useState(false);
+  const [categories, setCategories] = useState([]); // API থেকে আসা ক্যাটাগরি রাখার জন্য
+  
+  // ফর্ম ডেটা স্টেট
+const [formData, setFormData] = useState({ 
+  weight: "", 
+  notes: "", 
+  location: "", 
+  lat: "4", // ডিফল্ট ভ্যালু হিসেবে রাখলাম
+  lng: "2.57" 
+});
+
   const E = "#10B981";
-  const cats = [["🧴", "Plastic"], ["📄", "Paper"], ["🔩", "Metal"], ["🫙", "Glass"], ["💻", "E-Waste"], ["🌿", "Organic"]];
+
+  // ক্যাটাগরি ফেচ করার লজিক
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await authApiClient.get("/waste-categories/");
+        setCategories(res.data); // API রেসপন্স অনুযায়ী ডাটা সেট করা
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+
+  const handleUseCurrentLocation = () => {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        // স্টেট আপডেট করে দেওয়া
+        setFormData(prev => ({
+          ...prev,
+          lat: latitude.toString(),
+          lng: longitude.toString(),
+          location: `Lat: ${latitude.toFixed(4)}, Lng: ${longitude.toFixed(4)}` // অস্থায়ী এড্রেস ফরম্যাট
+        }));
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        alert("Unable to retrieve your location. Please enter manually.");
+      }
+    );
+  } else {
+    alert("Geolocation is not supported by your browser.");
+  }
+};
+
+  // সাবমিট করার ফাংশন
+const handleSubmit = async () => {
+  try {
+    // ল্যাটিটিউড এবং লংগিটিউড ফরম্যাটিং
+    const lat = parseFloat(formData.lat).toFixed(6); // দশমিকের পর সর্বোচ্চ ৬ ঘর
+    const lng = parseFloat(formData.lng).toFixed(6); // দশমিকের পর সর্বোচ্চ ৬ ঘর
+
+    const payload = {
+      category: parseInt(cat),
+      estimated_weight: parseFloat(formData.weight) || 0,
+      pickup_address: formData.location,
+      latitude: lat.toString(),
+      longitude: lng.toString()
+    };
+    
+    // API কল
+    await authApiClient.post("/pickups/", payload);
+    setDone(true);
+  } catch (error) {
+    console.error("Submission failed:", error.response?.data || error); // এরর ডিটেইলস কনসোলে দেখুন
+    alert("Failed to submit request. Please ensure location coordinates are valid.");
+  }
+};
 
   if (done) return (
     <div style={{ padding: 28, display: "flex", justifyContent: "center", paddingTop: 80 }}>
@@ -16,9 +89,6 @@ export function Pickup({ theme, dark }) {
         <div style={{ fontSize: 56, marginBottom: 16 }}>🎉</div>
         <div style={{ fontSize: 20, fontWeight: 700, color: theme.txt, marginBottom: 8 }}>Request submitted!</div>
         <div style={{ fontSize: 13, color: theme.muted, marginBottom: 20 }}>A recycler near you will accept shortly.</div>
-        <div style={{ fontSize: 13, padding: "8px 16px", borderRadius: 10, background: "rgba(16,185,129,0.1)", color: E, border: "1px solid rgba(16,185,129,0.3)", fontFamily: "monospace", marginBottom: 20 }}>
-          PCK-{Math.floor(Math.random() * 9000 + 1000)}
-        </div>
         <button onClick={() => { setDone(false); setStep(1); setCat(""); }}
           style={{ padding: "9px 20px", borderRadius: 10, background: E, color: "#fff", border: "none", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
           New request
@@ -34,104 +104,62 @@ export function Pickup({ theme, dark }) {
     <div style={{ padding: 28 }}>
       <h1 style={{ fontSize: 24, fontWeight: 700, color: theme.txt, marginBottom: 4 }}>New pickup</h1>
       <p style={{ fontSize: 13, color: theme.muted, marginBottom: 28 }}>Schedule a waste collection in a few steps.</p>
+      
       <div style={{ maxWidth: 500 }}>
-        {/* steps */}
-        <div style={{ display: "flex", alignItems: "center", marginBottom: 28 }}>
-          {["Category", "Details", "Location", "Review"].map((name, i) => (
-            <div key={name} style={{ display: "flex", alignItems: "center", flex: i < 3 ? 1 : "none" }}>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                <div style={{ width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, background: step > i + 1 ? E : step === i + 1 ? "rgba(16,185,129,0.18)" : "rgba(255,255,255,0.05)", color: step > i + 1 ? "#fff" : step === i + 1 ? E : theme.muted, border: `2px solid ${step >= i + 1 ? E : "rgba(255,255,255,0.1)"}` }}>
-                  {step > i + 1 ? "✓" : i + 1}
-                </div>
-                <span style={{ fontSize: 11, color: step === i + 1 ? E : theme.muted, whiteSpace: "nowrap" }}>{name}</span>
-              </div>
-              {i < 3 && <div style={{ flex: 1, height: 2, marginBottom: 16, background: step > i + 1 ? E : "rgba(255,255,255,0.08)" }} />}
-            </div>
-          ))}
-        </div>
-
         <AnimatePresence mode="wait">
           {step === 1 && (
-            <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-              style={{ padding: 24, borderRadius: 16, background: theme.card, border: `1px solid ${theme.border}` }}>
+            <motion.div key="s1" style={{ padding: 24, borderRadius: 16, background: theme.card, border: `1px solid ${theme.border}` }}>
               <div style={{ fontWeight: 600, color: theme.txt, marginBottom: 16 }}>What are you recycling?</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 20 }}>
-                {cats.map(([em, l]) => (
-                  <motion.button key={l} onClick={() => setCat(l)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                    style={{ padding: 16, borderRadius: 12, border: `1.5px solid ${cat === l ? E : theme.border}`, background: cat === l ? "rgba(16,185,129,0.12)" : dark ? "rgba(255,255,255,0.03)" : "#f9fafb", cursor: "pointer", textAlign: "center" }}>
-                    <div style={{ fontSize: 24, marginBottom: 4 }}>{em}</div>
-                    <div style={{ fontSize: 12, fontWeight: 500, color: cat === l ? E : theme.muted }}>{l}</div>
-                  </motion.button>
+                {categories.map((item) => (
+                  <button key={item.id} onClick={() => setCat(item.id)} 
+                    style={{ padding: 16, borderRadius: 12, border: `1.5px solid ${cat === item.id ? E : theme.border}`, background: cat === item.id ? "rgba(16,185,129,0.12)" : "transparent", cursor: "pointer" }}>
+                    <div style={{ fontSize: 20 }}>{item.icon || "♻️"}</div>
+                    <div style={{ fontSize: 12, marginTop: 4, color: cat === item.id ? E : theme.muted }}>{item.name}</div>
+                  </button>
                 ))}
               </div>
               <button disabled={!cat} onClick={() => setStep(2)} style={{ ...btnStyle(true), width: "100%", opacity: cat ? 1 : 0.35 }}>Continue</button>
             </motion.div>
           )}
+
           {step === 2 && (
-            <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-              style={{ padding: 24, borderRadius: 16, background: theme.card, border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: 16 }}>
-              <div style={{ fontWeight: 600, color: theme.txt }}>Waste details</div>
-              {[["Estimated weight (kg)", "e.g. 2.5", "number"], ["Notes", "Any special instructions…", "text"]].map(([l, p, t]) => (
-                <div key={l}>
-                  <div style={{ fontSize: 12, color: theme.muted, marginBottom: 6 }}>{l}</div>
-                  <input type={t} placeholder={p} style={inputStyle}
-                    onFocus={e => e.target.style.borderColor = E}
-                    onBlur={e => e.target.style.borderColor = theme.border} />
-                </div>
-              ))}
-              <div style={{ border: `2px dashed ${theme.border}`, borderRadius: 10, padding: 24, textAlign: "center" }}>
-                <Ic n="camera" s={24} c={theme.muted} />
-                <div style={{ fontSize: 13, color: theme.muted, marginTop: 8 }}>Upload waste photo</div>
-              </div>
+            <motion.div key="s2" style={{ padding: 24, borderRadius: 16, background: theme.card, border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: 16 }}>
+              <input type="number" placeholder="Weight (kg)" style={inputStyle} onChange={e => setFormData({...formData, weight: e.target.value})} />
+              <input type="text" placeholder="Notes" style={inputStyle} onChange={e => setFormData({...formData, notes: e.target.value})} />
               <div style={{ display: "flex", gap: 10 }}>
                 <button onClick={() => setStep(1)} style={btnStyle(false)}>Back</button>
                 <button onClick={() => setStep(3)} style={btnStyle(true)}>Continue</button>
               </div>
             </motion.div>
           )}
-          {step === 3 && (
-            <motion.div key="s3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-              style={{ padding: 24, borderRadius: 16, background: theme.card, border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: 16 }}>
-              <div style={{ fontWeight: 600, color: theme.txt }}>Pickup location</div>
-              <button style={{ padding: 12, borderRadius: 10, background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)", color: E, fontWeight: 600, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                <Ic n="location" s={16} c={E} /> Use current location
-              </button>
-              <div style={{ textAlign: "center", fontSize: 12, color: theme.muted }}>— or —</div>
-              <input placeholder="Enter address manually" style={inputStyle}
-                onFocus={e => e.target.style.borderColor = E}
-                onBlur={e => e.target.style.borderColor = theme.border} />
-              <div style={{ height: 120, borderRadius: 10, background: dark ? "rgba(16,185,129,0.04)" : "#f0fdf4", border: `1px solid ${theme.border}`, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden" }}>
-                <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.1 }}>
-                  <defs><pattern id="gp" width="30" height="30" patternUnits="userSpaceOnUse"><path d="M 30 0 L 0 0 0 30" fill="none" stroke={E} strokeWidth="0.5" /></pattern></defs>
-                  <rect width="100%" height="100%" fill="url(#gp)" />
-                </svg>
-                <motion.div animate={{ y: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>
-                  <Ic n="location" s={28} c={E} />
-                </motion.div>
-              </div>
-              <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={() => setStep(2)} style={btnStyle(false)}>Back</button>
-                <button onClick={() => setStep(4)} style={btnStyle(true)}>Continue</button>
-              </div>
-            </motion.div>
-          )}
+
+{step === 3 && (
+  <motion.div key="s3" style={{ padding: 24, borderRadius: 16, background: theme.card, border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: 16 }}>
+    
+    {/* নতুন বাটন */}
+    <button type="button" onClick={handleUseCurrentLocation}
+      style={{ padding: 12, borderRadius: 10, background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)", color: E, fontWeight: 600, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+      <Ic n="location" s={16} c={E} /> Use Current Location
+    </button>
+    
+    <input 
+      placeholder="Enter address manually" 
+      style={inputStyle} 
+      value={formData.location} // ভ্যালু বাইন্ড করা হলো
+      onChange={e => setFormData({...formData, location: e.target.value})} 
+    />
+    
+    <div style={{ display: "flex", gap: 10 }}>
+      <button onClick={() => setStep(2)} style={btnStyle(false)}>Back</button>
+      <button onClick={() => setStep(4)} style={btnStyle(true)}>Continue</button>
+    </div>
+  </motion.div>
+)}
+
           {step === 4 && (
-            <motion.div key="s4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-              style={{ padding: 24, borderRadius: 16, background: theme.card, border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: 16 }}>
-              <div style={{ fontWeight: 600, color: theme.txt }}>Confirm request</div>
-              {[["Category", cat], ["Location", "Current location"], ["Status", "Pending recycler"]].map(([l, v]) => (
-                <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${theme.border}` }}>
-                  <span style={{ fontSize: 13, color: theme.muted }}>{l}</span>
-                  <span style={{ fontSize: 13, fontWeight: 500, color: theme.txt }}>{v}</span>
-                </div>
-              ))}
-              <div style={{ padding: 12, borderRadius: 10, background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)", color: E, fontSize: 13 }}>
-                🌱 You'll earn approximately +240 Green Points
-              </div>
-              <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={() => setStep(3)} style={btnStyle(false)}>Back</button>
-                <button onClick={() => setDone(true)} style={btnStyle(true)}>Submit request</button>
-              </div>
+            <motion.div key="s4" style={{ padding: 24, borderRadius: 16, background: theme.card, border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", gap: 16 }}>
+              <button onClick={handleSubmit} style={btnStyle(true)}>Submit Request</button>
             </motion.div>
           )}
         </AnimatePresence>

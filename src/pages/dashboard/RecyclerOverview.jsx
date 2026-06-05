@@ -34,7 +34,7 @@ const RecyclerOverview = ({ theme, dark }) => {
       alert("Job Accepted Successfully!");
       fetchJobs();
     } catch (err) {
-      alert("Failed to accept the job.");
+      alert("Failed to accept the job.",err);
     }
   };
 

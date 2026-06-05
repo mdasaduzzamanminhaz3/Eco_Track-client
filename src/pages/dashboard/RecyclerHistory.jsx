@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import authApiClient from "../../services/auth-api-client";
 import { motion, useSpring, useTransform, animate } from "framer-motion";
 import AreaChart from "../../components/charts/AreaChart";
@@ -13,54 +13,91 @@ function AnimatedCounter({ from, to }) {
   return <motion.span>{useTransform(count, (latest) => Math.round(latest))}</motion.span>;
 }
 
-export function RecyclerHistory({ theme, dark }) {
+export function RecyclerHistory({ theme }) {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [collectingId, setCollectingId] = useState(null);
+  const [weightInput, setWeightInput] = useState("");
 
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const res = await authApiClient.get("pickups/");
-        setHistory(res.data);
-      } catch (err) {
-        console.error("Error fetching history:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchHistory();
+  // ডেটা ফেচ করার ফাংশন
+  const fetchHistory = useCallback(async () => {
+    try {
+      const res = await authApiClient.get("pickups/");
+      setHistory(res.data);
+    } catch (err) {
+      console.error("Error fetching history:", err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const accepted = history.filter(j => j.status === "ACCEPTED").length;
-  const pending = history.filter(j => j.status === "PENDING").length;
-  const collected = history.filter(j => j.status === "COLLECTED");
-  const totalWeight = collected.reduce((acc, curr) => acc + (parseFloat(curr.actual_weight) || 0), 0);
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
 
-  // চার্টের ডেটা
-  const chartData = collected.map(h => parseFloat(h.actual_weight) || 0);
-  const chartLabels = collected.map(h => new Date(h.updated_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short' }));
+  // ডেটা ক্যালকুলেশন
+  const accepted = useMemo(() => history.filter((j) => j.status === "ACCEPTED"), [history]);
+  const pending = useMemo(() => history.filter((j) => j.status === "PENDING"), [history]);
+  const collected = useMemo(() => history.filter((j) => j.status === "COLLECTED"), [history]);
+
+  const totalWeight = useMemo(() => 
+    collected.reduce((acc, curr) => acc + (parseFloat(curr.actual_weight) || 0), 0), 
+  [collected]);
 
   // ক্যাটাগরি ডিস্ট্রিবিউশন লজিক
-  const categoryStats = collected.reduce((acc, curr) => {
-    const cat = curr.category_detail?.name || "Other";
-    acc[cat] = (acc[cat] || 0) + (parseFloat(curr.actual_weight) || 0);
-    return acc;
-  }, {});
+  const categoryStats = useMemo(() => {
+    return collected.reduce((acc, curr) => {
+      const cat = curr.category_detail?.name || "Other";
+      acc[cat] = (acc[cat] || 0) + (parseFloat(curr.actual_weight) || 0);
+      return acc;
+    }, {});
+  }, [collected]);
+
+  // চার্টের ডেটা ও লেবেল প্রিপারেশন
+  const chartData = useMemo(() => collected.map((h) => parseFloat(h.actual_weight) || 0), [collected]);
+  const chartLabels = useMemo(() => 
+    collected.map((h) => new Date(h.updated_at).toLocaleDateString("en-US", { day: "numeric", month: "short" })), 
+  [collected]);
+
+  const handleCollect = async (id) => {
+    if (!weightInput || parseFloat(weightInput) <= 0) {
+      return alert("Please enter a valid weight");
+    }
+    
+    try {
+      await authApiClient.post(`/pickups/${id}/complete/`, {
+        actual_weight: parseFloat(weightInput),
+      });
+      
+      setCollectingId(null);
+      setWeightInput("");
+      await fetchHistory(); 
+      
+    } catch (err) {
+      console.error(err);
+      const errorMsg = err.response?.data?.error || "Failed to update status.";
+      alert(errorMsg);
+    }
+  };
+
+  // 🗺️ গুগল ম্যাপস নেভিগেশন লিংক জেনারেট করার ফাংশন
+  const handleViewLocation = (lat, lng) => {
+    if (!lat || !lng) {
+      return alert("Location coordinates not available for this request.");
+    }
+    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+    window.open(mapUrl, "_blank");
+  };
 
   if (loading) return <div style={{ color: theme.txt, padding: 24, textAlign: "center" }}>Loading history...</div>;
 
   return (
     <div style={{ padding: "24px", color: theme.txt }}>
-      <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: "24px", fontWeight: "bold" }}>Collection History</h2>
-        <p style={{ color: theme.muted, fontSize: "14px" }}>Performance overview and collection logs.</p>
-      </div>
-
       {/* সামারি কার্ডস */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16, marginBottom: 24 }}>
         {[
-          { l: "Accepted", v: accepted, c: "#3B82F6" },
-          { l: "Pending", v: pending, c: "#F59E0B" },
+          { l: "Accepted", v: accepted.length, c: "#3B82F6" },
+          { l: "Pending", v: pending.length, c: "#F59E0B" },
           { l: "Collected", v: collected.length, c: "#10B981" },
         ].map((item, i) => (
           <div key={i} style={{ background: theme.card, padding: 20, borderRadius: 16, border: `1px solid ${theme.border}`, textAlign: "center" }}>
@@ -72,57 +109,101 @@ export function RecyclerHistory({ theme, dark }) {
         ))}
       </div>
 
-      {/* চার্ট এবং গেইজ সেকশন */}
+      {/* চার্ট এবং ক্যাটাগরি ডিস্ট্রিবিউশন সেকশন */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16, marginBottom: 24 }}>
         {chartData.length > 0 && (
           <div style={{ background: theme.card, padding: 20, borderRadius: 16, border: `1px solid ${theme.border}` }}>
-            <h3 style={{ marginBottom: 16, fontSize: "16px" }}>Collection Trend ({totalWeight.toFixed(1)} KG Total)</h3>
+            <h3 style={{ marginBottom: 16, fontSize: "16px" }}>
+              Collection Trend ({totalWeight.toFixed(1)} KG Total)
+            </h3>
             <AreaChart data={chartData} labels={chartLabels} />
           </div>
         )}
 
         <div style={{ background: theme.card, padding: 20, borderRadius: 16, border: `1px solid ${theme.border}` }}>
-          <h3 style={{ marginBottom: 16, fontSize: "16px" }}>Category Distribution</h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {Object.entries(categoryStats).map(([cat, weight], i) => {
-              const percentage = (weight / (totalWeight || 1)) * 100;
+          <h3 style={{ fontSize: "16px" }}>Category Distribution</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
+            {Object.entries(categoryStats).map(([cat, weight]) => {
+              const percentage = totalWeight > 0 ? (weight / totalWeight) * 100 : 0;
               return (
-                <div key={i}>
+                <div key={cat}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
                     <span>{cat}</span>
                     <span style={{ fontWeight: "bold" }}>{weight.toFixed(1)} KG</span>
                   </div>
                   <div style={{ height: 8, background: theme.border, borderRadius: 4, overflow: "hidden" }}>
                     <motion.div 
-                      initial={{ width: 0 }} animate={{ width: `${percentage}%` }}
-                      transition={{ duration: 1 }}
+                      initial={{ width: 0 }} 
+                      animate={{ width: `${percentage}%` }} 
+                      transition={{ duration: 0.8 }}
                       style={{ height: "100%", background: "#10B981" }} 
                     />
                   </div>
                 </div>
               );
             })}
+            {Object.keys(categoryStats).length === 0 && (
+              <p style={{ fontSize: 13, color: theme.muted }}>No collected data available.</p>
+            )}
           </div>
         </div>
       </div>
 
-      {/* ডিটেইল লগ */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {collected.map((job) => (
-          <motion.div 
-            initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-            key={job.id} 
-            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: theme.card, padding: 16, borderRadius: 12, border: `1px solid ${theme.border}` }}
-          >
+      {/* Active Requests (ACCEPTED) */}
+      <div style={{ marginBottom: 24 }}>
+        <h3 style={{ fontSize: "16px", marginBottom: 12 }}>Active Requests (To Collect)</h3>
+        {accepted.map((job) => (
+          <div key={job.id} style={{ background: theme.card, padding: 16, borderRadius: 12, border: `1px solid ${theme.border}`, marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <p style={{ margin: 0, fontWeight: "bold", fontSize: 14 }}>{job.category_detail?.name || "Waste"} Collection</p>
-              <p style={{ margin: 0, fontSize: 11, color: theme.muted }}>User: {job.user?.email}</p>
+              <p style={{ margin: 0, fontWeight: "bold" }}>{job.category_detail?.name || "Unassigned"}</p>
+              <p style={{ fontSize: 11, color: theme.muted, margin: "4px 0 0 0" }}>{job.pickup_address}</p>
             </div>
-            <div style={{ textAlign: "right" }}>
-              <p style={{ margin: 0, color: "#10B981", fontWeight: "bold", fontSize: 14 }}>{job.actual_weight} KG</p>
+            
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              {/* 📍 এখানে নতুন লোকেশন বাটনটি যোগ করা হয়েছে */}
+              <button 
+                onClick={() => handleViewLocation(job.latitude, job.longitude)}
+                style={{ 
+                  padding: "8px 12px", 
+                  background: "transparent", 
+                  color: "#10B981", 
+                  border: "1px solid #10B981", 
+                  hover: { background: "#10B98", color: "#fff" },
+                  borderRadius: 6, 
+                  cursor: "pointer", 
+                  fontWeight: "bold",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4
+                }}
+                title="Open in Google Maps"
+              >
+                 Location
+              </button>
+
+              {collectingId === job.id ? (
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input 
+                    type="number" 
+                    step="0.1"
+                    placeholder="KG" 
+                    autoFocus
+                    style={{ width: 80, padding: "6px 8px", borderRadius: 6, border: `1px solid ${theme.border}`, background: 'transparent', color: 'inherit' }} 
+                    value={weightInput}
+                    onChange={(e) => setWeightInput(e.target.value)} 
+                  />
+                  <button onClick={() => handleCollect(job.id)} style={{ padding: "6px 14px", background: "#10B981", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: "bold" }}>Save</button>
+                  <button onClick={() => { setCollectingId(null); setWeightInput(""); }} style={{ padding: "6px 14px", background: "transparent", color: theme.muted, border: `1px solid ${theme.border}`, borderRadius: 6, cursor: "pointer" }}>Cancel</button>
+                </div>
+              ) : (
+                <button onClick={() => setCollectingId(job.id)} style={{ padding: "8px 16px", background: "#10B981", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: "bold" }}>Collect</button>
+              )}
             </div>
-          </motion.div>
+          </div>
         ))}
+        {accepted.length === 0 && (
+          <p style={{ fontSize: 13, color: theme.muted }}>No active accepted pickups.</p>
+        )}
       </div>
     </div>
   );
