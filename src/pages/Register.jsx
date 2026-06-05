@@ -30,7 +30,7 @@ const passwordValue = watch("password");
   async function onSubmit(data) {
     setLocalError("");
     setLoading(true);
-    const useData = {
+    const userData = {
       first_name: data.first_name,
       last_name: data.last_name,
       email: data.email,
@@ -38,7 +38,7 @@ const passwordValue = watch("password");
       re_password: data.re_password,
       role: role.toUpperCase()
     };
-    const result = await registerUser(useData);
+    const result = await registerUser(userData);
     setLoading(false);
     if (result?.success) {
       navigate("/login", { replace: true });

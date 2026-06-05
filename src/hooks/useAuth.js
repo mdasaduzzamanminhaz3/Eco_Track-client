@@ -125,7 +125,8 @@ const handleAPIError = (error, defaultMessage = "Something went wrong ! Try agai
     const registerUser = async (userData) => {
         setError("");
         try {
-            await apiClient.post('/auth/users/', userData);
+            const res = await apiClient.post('/auth/users/', userData);
+            console.log(res.data);
             return {success: true, message: "Registration successful ! Please login to continue."};
         } catch (error) {
             return handleAPIError(error, "Registration failed ! Please check your details and try again.");

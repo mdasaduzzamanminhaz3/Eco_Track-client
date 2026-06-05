@@ -49,13 +49,18 @@ const RecyclerOverview = ({ theme, dark }) => {
     return () => { isMounted = false; };
   }, []);
 
-  const handleAcceptJob = async (jobId) => {
+const handleAcceptJob = async (jobId) => {
     try {
-      await authApiClient.patch(`pickups/${jobId}/`, { status: "ACCEPTED" });
+      // 🎯 কাস্টম অ্যাকশন এন্ডপয়েন্ট '/accept/' এবং মেথড 'post' ব্যবহার করা হয়েছে
+      await authApiClient.post(`pickups/${jobId}/accept/`);
       alert("Job Accepted Successfully!");
-      fetchJobs();
+      
+      // লিস্ট থেকে ওটা রিমুভ করে রিফ্রেশ করার জন্য
+      fetchJobs(); 
     } catch (err) {
-      alert("Failed to accept the job.");
+      console.error("Accept error:", err);
+      const errorMsg = err.response?.data?.error || "Failed to accept the job.";
+      alert(errorMsg);
     }
   };
 

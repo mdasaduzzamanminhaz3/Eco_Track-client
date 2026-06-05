@@ -20,9 +20,10 @@ export function RecyclerHistory({ theme }) {
   const [weightInput, setWeightInput] = useState("");
 
   // ডেটা ফেচ করার ফাংশন
-  const fetchHistory = useCallback(async () => {
+const fetchHistory = useCallback(async () => {
     try {
-      const res = await authApiClient.get("pickups/");
+      // 🎯 ব্যাকএন্ডকে জানান যে এটি ড্যাশবোর্ড মোড
+      const res = await authApiClient.get("pickups/?dashboard=true");
       setHistory(res.data);
     } catch (err) {
       console.error("Error fetching history:", err);
@@ -65,7 +66,7 @@ export function RecyclerHistory({ theme }) {
     }
     
     try {
-      await authApiClient.post(`/pickups/${id}/complete/`, {
+      await authApiClient.post(`pickups/${id}/complete/`, {
         actual_weight: parseFloat(weightInput),
       });
       
