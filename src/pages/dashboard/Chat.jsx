@@ -11,13 +11,13 @@ export function Chat({ theme, dark, activePickupId }) {
   const [selectedRoom, setSelectedRoom] = useState(activePickupId || null);
   const [msgs, setMsgs] = useState([]);
   const [input, setInput] = useState("");
-  const [isPartnerTyping, setIsPartnerTyping] = useState(false); // টাইপিং স্টেট
+  const [isPartnerTyping, setIsPartnerTyping] = useState(false); // typing state
   const [realUserId, setRealUserId] = useState(null); 
   const ws = useRef(null);
   const bottomRef = useRef(null);
-  const typingTimeoutRef = useRef(null); // টাইপিং টাইমার ট্র্যাকিং
+  const typingTimeoutRef = useRef(null); // typing timer tracking
 
-  // 1️⃣ একটিভ চ্যাট রুম এবং কারেন্ট ইউজারের রিয়াল আইডি লোড করা
+  // active chat room & current user real id load
   useEffect(() => {
     const initChatData = async () => {
       try {
@@ -43,7 +43,7 @@ export function Chat({ theme, dark, activePickupId }) {
     initChatData();
   }, [selectedRoom, activePickupId]);
 
-  // ✨ ডুপ্লিকেট পার্টনার ফিল্টার আউট লজিক (ইউনিক চ্যাট লিস্ট তৈরি)
+  // ✨ unique chat list 
   const getUniqueRooms = () => {
     const seenPartners = new Set();
     const unique = [];
@@ -62,11 +62,11 @@ export function Chat({ theme, dark, activePickupId }) {
 
   const uniqueRooms = getUniqueRooms();
 
-  // 2️⃣ ওল্ড হিস্ট্রি এবং লাইভ WebSocket কানেকশন
+  // prev history & live WebSocket connection
   useEffect(() => {
     if (!selectedRoom || !realUserId) return;
 
-    setIsPartnerTyping(false); // রুম চেঞ্জ হলে টাইপিং রিসেট
+    setIsPartnerTyping(false); // when room is change typing reset 
 
     const fetchMessages = async () => {
       try {
@@ -178,7 +178,7 @@ export function Chat({ theme, dark, activePickupId }) {
   return (
     <div style={{ padding: 28, display: "flex", gap: 16, height: "calc(100vh - 56px)", maxHeight: 620 }}>
       
-      {/* 📁 ইউনিক মেসেজ লিস্ট ডিরেক্টরি (বাম পাশ) */}
+      {/*  ইউনিক মেসেজ লিস্ট ডিরেক্টরি (বাম পাশ) */}
       <div style={{ width: 240, flexShrink: 0, borderRadius: 16, background: theme.card, border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div style={{ padding: "14px 16px", fontWeight: 600, color: theme.txt, borderBottom: `1px solid ${theme.border}` }}>Messages</div>
         <div style={{ overflowY: "auto", flex: 1 }}>
@@ -213,7 +213,8 @@ export function Chat({ theme, dark, activePickupId }) {
                     </span>
                   </div>
                   <div style={{ fontSize: 11, color: theme.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    ID: {chatPartnerId ? chatPartnerId.toString().slice(0, 8) : "Assigned"}...
+                    {/* ID: {chatPartnerId ? chatPartnerId.toString().slice(0, 8) : "Assigned"}... */}
+                    Email: {currentIsCustomer ? room.recycler?.email || "Not Provided" : room.user?.email || "Not Provided"}
                   </div>
                 </div>
               </div>
@@ -239,7 +240,7 @@ export function Chat({ theme, dark, activePickupId }) {
               <div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: theme.txt }}>{partnerName}</div>
                 <div style={{ fontSize: 11, color: E }}>
-                  ID: {partnerIdDisplay ? partnerIdDisplay.toString().slice(0, 8) : "Loading"}...
+                  {/* ID: {partnerIdDisplay ? partnerIdDisplay.toString().slice(0, 8) : "Loading"}... */}
                 </div>
               </div>
             </div>

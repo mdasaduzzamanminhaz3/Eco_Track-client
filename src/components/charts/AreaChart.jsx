@@ -10,7 +10,7 @@ function AreaChart({ data, labels }) {
   ]);
   
   const lineD = "M " + pts.map(([x, y]) => `${x} ${y}`).join(" L ");
-  const areaD = `M ${pts[0][0]} ${H - py} L ${pts.map(([x, y]) => `${x} ${y}`).join(" L ")} L ${pts[pts.length - 1][0]} ${H - py} Z`;
+  const areaD = `M ${pts[0][0]} ${H - py} L ${pts.map(([x, y]) => `${x} ${y}`).join(" L ")} L ${pts[pts?.length - 1][0]} ${H - py} Z`;
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }}>
@@ -21,7 +21,16 @@ function AreaChart({ data, labels }) {
           <stop offset="100%" stopColor={E} stopOpacity="0" />
         </linearGradient>
       </defs>
-      
+      {pts.map((t) => {
+        const y = py + t * (H - py * 2);
+        return <line key={t} x1={px} y1={y} x2={W - px} y2={y} stroke="rgba(255,255,255,0.06)" strokeDasharray="4 4" />;
+      })}
+      {labels.map((l, i) => {
+        const x = px + (i / (labels.length - 1)) * (W - px * 2);
+        return <text key={l} x={x} y={H - 2} fill="rgba(255,255,255,0.3)" fontSize="10" textAnchor="middle">{l}</text>;
+      })}
+      <path d={areaD} fill="url(#ag)" />
+      <path d={lineD} fill="none" stroke={E} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
       {/* পয়েন্ট এবং হোভার টিপ */}
       {pts.map(([x, y], i) => (
         <circle key={i} cx={x} cy={y} r="4" fill={E} stroke="#fff" strokeWidth="2" className="cursor-pointer transition-all hover:r-6">
