@@ -25,19 +25,24 @@ const Chart = ({ theme, dark }) => {
     fetchMywallet();
   }, []);
 
-  const getWeeklyData = () => {
-    const weeklyPoints = new Array(7).fill(0); // for 7 days its start 0
+const getWeeklyData = () => {
+    const weeklyPoints = new Array(7).fill(0); 
     if (!wallet || !Array.isArray(wallet.transactions)) {
-      return weeklyPoints; //
+      return weeklyPoints;
     }
 
-    wallet?.transactions?.forEach((t) => {
-      const date = new Date(t.created_at);
-      const dayIndex = date.getDate(); // 0 (Sun) to 6 (Sat)
-      weeklyPoints[dayIndex] += t.points;
+    wallet.transactions.forEach((t) => {
+      if (t.created_at && typeof t.points === 'number') {
+        const date = new Date(t.created_at);
+        let dayIndex = date.getDay();
+        dayIndex = dayIndex === 0 ? 6 : dayIndex - 1;
+        
+        weeklyPoints[dayIndex] += t.points;
+      }
     });
     return weeklyPoints;
   };
+
   const dynamicChartData = getWeeklyData();
   return (
     <div

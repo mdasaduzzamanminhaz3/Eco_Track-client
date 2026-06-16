@@ -2,8 +2,8 @@
 function AreaChart({ data, labels }) {
   const W = 500, H = 160, px = 28, py = 16;
   const E = "#10B981";
-  const max = Math.max(...data, 1) * 1.1; // ডেটা খালি থাকলে এরর এড়াতে
-  
+  const safeData = data.map(v => (isNaN(v) || v === null ? 0 : v));
+  const max = Math.max(...safeData, 1) * 1.1;
   const pts = data.map((v, i) => [
     px + (i / (data.length - 1 || 1)) * (W - px * 2),
     H - py - (v / max) * (H - py * 2),
@@ -21,9 +21,9 @@ function AreaChart({ data, labels }) {
           <stop offset="100%" stopColor={E} stopOpacity="0" />
         </linearGradient>
       </defs>
-      {pts.map((t) => {
-        const y = py + t * (H - py * 2);
-        return <line key={t} x1={px} y1={y} x2={W - px} y2={y} stroke="rgba(255,255,255,0.06)" strokeDasharray="4 4" />;
+{[0, 0.25, 0.5, 0.75, 1].map((v, i) => {
+        const y = py + v * (H - py * 2);
+        return <line key={i} x1={px} y1={y} x2={W - px} y2={y} stroke="rgba(255,255,255,0.1)" strokeDasharray="4 4" />;
       })}
       {labels.map((l, i) => {
         const x = px + (i / (labels.length - 1)) * (W - px * 2);
