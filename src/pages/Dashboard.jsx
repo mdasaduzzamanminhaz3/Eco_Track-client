@@ -17,12 +17,13 @@ import { Profile } from "./dashboard/Profile";
 // রিসাইক্লারের নতুন দুটি স্পেশাল পেজ
 import { RecyclerHistory } from "./dashboard/RecyclerHistory";
 import RecyclerOverview from "./dashboard/RecyclerOverview";
+import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
   const { user, logoutUser, authLoading } = useAuth(); // 🎯 আপনার হুকে যদি authLoading বা কোনো লোডিং স্টেট থাকে তা নিন
   const [page, setPage] = useState("overview");
   const [dark, setDark] = useState(true);
-
+  const navigate = useNavigate();
   const E = "#10B981";
   const LIME = "#84CC16";
 
@@ -58,7 +59,7 @@ export default function Dashboard() {
 
   // 🎯 সেফটি ফিক্স: ইউজার অবজেক্ট যদি কোনো কারণে এখনো না পায়, ব্ল্যাঙ্ক স্ক্রিন বা লোডিং দেখাবে
   if (!user) {
-    return <div style={{ color: theme.txt, background: theme.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>Authenticating User...</div>;
+    return navigate("/")
   }
 
   // বর্তমান অ্যাক্টিভ রোল ট্র্যাকিং (কন্ডিশন সহজ করার জন্য)

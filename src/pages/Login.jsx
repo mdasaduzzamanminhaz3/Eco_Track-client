@@ -214,6 +214,7 @@ async function onSubmit(data) {
                 Password
               </span>
               <button
+              onClick={() => navigate("/forgot-password")}
                 type="button"
                 style={{
                   background: "none",

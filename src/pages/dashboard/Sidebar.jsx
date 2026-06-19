@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { Ic } from "../../components/ui/Icons";
 
 export function Sidebar({ 
@@ -16,7 +17,7 @@ export function Sidebar({
   const getNavItems = () => {
     // সেফটি চেইনিং এবং ছোট হাতের অক্ষরে কনভার্ট
     const currentRole = user?.role ? user.role.toLowerCase() : "";
-
+    
     if (currentRole === "recycler") {
       // ♻️ রিসাইক্লারের সাইডবার লিস্ট
       return [
@@ -41,7 +42,7 @@ export function Sidebar({
   };
 
   const nav = getNavItems();
-
+  const navigate = useNavigate();
   // ইউজারের নামের প্রথম অক্ষর বা ইনিশিয়াল বের করা
   const fullName = user ? `${user.first_name || ""} ${user.last_name || ""}`.trim() : "";
   const displayName = fullName || user?.email || "User";
@@ -64,7 +65,7 @@ export function Sidebar({
       }}
     >
       {/* Sidebar Logo */}
-      <div style={{ height: 56, display: "flex", alignItems: "center", padding: "0 20px", borderBottom: `1px solid ${theme.sidebarBorder}` }}>
+      <div onClick={() => navigate("/")} style={{cursor:"pointer", height: 56, display: "flex", alignItems: "center", padding: "0 20px", borderBottom: `1px solid ${theme.sidebarBorder}` }}>
         <div style={{ width: 28, height: 28, borderRadius: 7, background: `linear-gradient(135deg,${E},${LIME})`, display: "flex", alignItems: "center", justifyContent: "center", marginRight: 8 }}>
           <Ic n="leaf" s={13} c="#fff" />
         </div>

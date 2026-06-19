@@ -7,6 +7,9 @@ import Dashboard from "../pages/Dashboard";
 import { Profile } from "../pages/dashboard/Profile";
 import { Pickup } from "../pages/dashboard/Pickup";
 import { Leaderboard } from "../pages/dashboard/Leaderboard";
+import { ForgotPassword } from "../pages/ForgotPassword";
+import { ResetPasswordConfirm } from "../pages/ResetPasswordConfirm";
+import ActivationPage from "../pages/ActivationPage";
 
 // পাবলিক পেজসমূহ
 
@@ -17,7 +20,9 @@ export default function AppRoutes() {
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      
+      <Route path="/activate/:uid/:token" element={<ActivationPage />} />
+      <Route path="/password-reset-confirm/:uid/:token" element={<ResetPasswordConfirm />} />
+      <Route path="/forgot-password" element={<ForgotPassword/>} />
       {/* ================= PROTECTED ROUTES ================= */}
       {/* এই রুটের ভেতরে যা থাকবে, সবকিছুর জন্য ইউজার লগইন থাকা বাধ্যতামূলক */}
       <Route element={<ProtectedRoute />}>
