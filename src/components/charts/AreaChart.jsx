@@ -1,4 +1,3 @@
-// AreaChart.jsx
 function AreaChart({ data, labels }) {
   const W = 500, H = 160, px = 28, py = 16;
   const E = "#10B981";
@@ -14,7 +13,7 @@ function AreaChart({ data, labels }) {
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }}>
-      {/* লিনিয়ার গ্র্যাডিয়েন্ট এবং গ্রিড লাইন আগের মতোই থাকবে */}
+  
       <defs>
         <linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={E} stopOpacity="0.3" />
@@ -31,7 +30,7 @@ function AreaChart({ data, labels }) {
       })}
       <path d={areaD} fill="url(#ag)" />
       <path d={lineD} fill="none" stroke={E} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      {/* পয়েন্ট এবং হোভার টিপ */}
+      {/* points & hover tip */}
       {pts.map(([x, y], i) => (
         <circle key={i} cx={x} cy={y} r="4" fill={E} stroke="#fff" strokeWidth="2" className="cursor-pointer transition-all hover:r-6">
           <title>{`${labels[i]}: ${data[i]} KG`}</title>

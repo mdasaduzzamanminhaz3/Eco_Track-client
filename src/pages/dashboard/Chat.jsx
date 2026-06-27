@@ -43,7 +43,7 @@ export function Chat({ theme, dark, activePickupId }) {
     initChatData();
   }, [selectedRoom, activePickupId]);
 
-  // ✨ unique chat list 
+  //  unique chat list 
   const getUniqueRooms = () => {
     const seenPartners = new Set();
     const unique = [];
@@ -89,14 +89,17 @@ export function Chat({ theme, dark, activePickupId }) {
     };
     
     fetchMessages();
+    const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+    // const wsScheme = isLocalhost? "ws":"wss";
+    // const wsHost = isLocalhost ? "localhost:8000" : "ecotrack-production-6bb8.up.railway.app";
 
-    const wsUrl = `ws://localhost:8000/ws/chat/${selectedRoom}/?user_id=${realUserId}`;
+    const wsUrl = `wss://ecotrack-production-6bb8.up.railway.app/ws/chat/${selectedRoom}/?user_id=${realUserId}`;
     ws.current = new WebSocket(wsUrl);
 
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
       
-      // 🕵️‍♂️ যদি ব্যাকএন্ড থেকে টাইপিং ইভেন্ট আসে
+      // if the typing event comes from backend
       if (data.typing !== undefined) {
         if (String(data.sender_id) !== String(realUserId)) {
           setIsPartnerTyping(data.typing);
@@ -104,7 +107,7 @@ export function Chat({ theme, dark, activePickupId }) {
         return;
       }
 
-      // সাধারণ মেসেজ রেন্ডারিং
+      // genaral message rendering
       const liveSenderId = data.sender_id || data.sender?.id;
       const isMe = String(liveSenderId) === String(realUserId);
       const msgId = data.id || `live-${Date.now()}`;
@@ -127,29 +130,29 @@ export function Chat({ theme, dark, activePickupId }) {
     };
   }, [selectedRoom, realUserId]);
 
-  // ⌨️ টাইপিং সিগন্যাল হ্যান্ডলার (যখন কারেন্ট ইউজার ইনপুটে হাত দেবে)
+  // typing signal handeler. when current user input typing
   const handleInputChange = (e) => {
     setInput(e.target.value);
 
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      // ব্যাকএন্ডে টাইপিং শুরু করার সিগন্যাল পাঠানো
+      // sending signals to start typing from the backend
       ws.current.send(JSON.stringify({ typing: true }));
 
-      // পুরনো টাইমার ক্লিয়ার করে নতুন করে টাইমার সেট করা
+      // setting new timer by clearing old timer
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       
       typingTimeoutRef.current = setTimeout(() => {
         if (ws.current && ws.current.readyState === WebSocket.OPEN) {
           ws.current.send(JSON.stringify({ typing: false }));
         }
-      }, 2500); // ২.৫ সেকেন্ড পর টাইপিং অফ হবে
+      }, 2500); // after 2.5s typing is off 
     }
   };
 
   function send() {
     if (!input.trim() || !ws.current || ws.current.readyState !== WebSocket.OPEN) return;
 
-    // মেসেজ পাঠানোর সময় টাইপিং সিগন্যাল অফ করে দেওয়া
+    // after sending the message typing signal is off
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     ws.current.send(JSON.stringify({ typing: false }));
 
@@ -178,7 +181,7 @@ export function Chat({ theme, dark, activePickupId }) {
   return (
     <div style={{ padding: 28, display: "flex", gap: 16, height: "calc(100vh - 56px)", maxHeight: 620 }}>
       
-      {/*  ইউনিক মেসেজ লিস্ট ডিরেক্টরি (বাম পাশ) */}
+      {/*  unique message list directiory in the left side*/}
       <div style={{ width: 240, flexShrink: 0, borderRadius: 16, background: theme.card, border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div style={{ padding: "14px 16px", fontWeight: 600, color: theme.txt, borderBottom: `1px solid ${theme.border}` }}>Messages</div>
         <div style={{ overflowY: "auto", flex: 1 }}>
@@ -226,7 +229,7 @@ export function Chat({ theme, dark, activePickupId }) {
         </div>
       </div>
 
-      {/* 💬 অ্যাক্টিভ চ্যাট উইন্ডো (ডান পাশ) */}
+      {/* active window in right side) */}
       <div style={{ flex: 1, borderRadius: 16, background: theme.card, border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {selectedRoom ? (
           <>
@@ -245,7 +248,7 @@ export function Chat({ theme, dark, activePickupId }) {
               </div>
             </div>
 
-            {/* মেসেজ স্ক্রিন এলাকা */}
+            {/* message screen area */}
             <div style={{ flex: 1, overflow: "auto", padding: 18, display: "flex", flexDirection: "column", gap: 10 }}>
               {msgs.map((m) => (
                 <motion.div key={m.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
@@ -259,7 +262,7 @@ export function Chat({ theme, dark, activePickupId }) {
                 </motion.div>
               ))}
               
-              {/* 💬 মেসেঞ্জার স্টাইল ৩-ডট বাউন্সিং টাইপিং অ্যানিমেশন */}
+              {/* 3 dot bouncing typing animation like messenger */}
               <AnimatePresence>
                 {isPartnerTyping && (
                   <motion.div 
@@ -304,7 +307,7 @@ export function Chat({ theme, dark, activePickupId }) {
               <div ref={bottomRef} />
             </div>
 
-            {/* ইনপুট ফিল্ড বার */}
+            {/* input fieldbar */}
             <div style={{ padding: 14, borderTop: `1px solid ${theme.border}`, display: "flex", gap: 8 }}>
               <input value={input} onChange={handleInputChange} onKeyDown={e => e.key === "Enter" && send()}
                 placeholder="Type a message…"

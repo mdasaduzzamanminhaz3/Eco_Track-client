@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import { Ic } from "../../components/ui/Icons";
 
-// 🚨 Leaflet এর ডিফল্ট মার্কার আইকন গ্লিচ ফিক্স করার জন্য কাস্টম মার্কার কনফিগারেশন
+//  Custom marker configuration to fix the default marker icon glitch in Leaflet.
 const createCustomIcon = (color, isUser = false) => {
   return new L.DivIcon({
     html: `
@@ -24,7 +24,7 @@ const createCustomIcon = (color, isUser = false) => {
   });
 };
 
-// 🎯 ম্যাপের সেন্টার বা ফোকাস স্মুথলি চেঞ্জ করার জন্য একটি হেল্পার কম্পোনেন্ট
+//  A helper component to smoothly change the map's center or focus.
 function ChangeView({ center }) {
   const map = useMap();
   map.setView(center, map.getZoom(), { animate: true, duration: 0.8 });
@@ -34,11 +34,11 @@ function ChangeView({ center }) {
 export function MapView({ theme, dark }) {
   const E = "#10B981";
   
-  // ঢাকার আসল জিপিএস কো-অর্ডিনেটস সেট করা হয়েছে ডামি সেন্টারের জন্য
-  const [mapCenter, setMapCenter] = useState([23.7461, 90.3742]); // ডিফল্ট: ধানমন্ডি
+  //Dhaka's actual GPS coordinates have been set for the dummy center.
+  const [mapCenter, setMapCenter] = useState([23.7461, 90.3742]); // default: Dhanmondi
   const [zoomLevel, setZoomLevel] = useState(13);
 
-  // রিয়ালিস্টিক ঢাকা জেনুইন কো-অর্ডিনেটস ডাটা
+  //Realistic Dhaka Genuine Coordinates Data
   const centers = [
     { n: "GreenCycle Hub", d: "0.8 km", t: "Plastic, Paper", r: 4.8, lat: 23.7461, lng: 90.3742 }, // ধানমন্ডি
     { n: "EcoRecycle Center", d: "1.4 km", t: "Metal, Glass", r: 4.6, lat: 23.7925, lng: 90.4156 }, // গুলশান
@@ -46,8 +46,8 @@ export function MapView({ theme, dark }) {
     { n: "Urban Green Co.", d: "3.2 km", t: "All types", r: 4.7, lat: 23.8683, lng: 90.4004 }, // উত্তরা
   ];
 
-  // ইউজারের নিজস্ব ডামি কারেন্ট লোকেশন (ম্যাপে 'You' পিন দেখানোর জন্য)
-  const userLocation = { lat: 23.7561, lng: 90.3842 }; // কারওয়ান বাজার এরিয়া
+  // The user's own dummy current location (to display the 'You' pin on the map)
+  const userLocation = { lat: 23.7561, lng: 90.3842 }; // Karwanbazar area
 
   return (
     <div style={{ padding: 28 }}>
@@ -55,7 +55,7 @@ export function MapView({ theme, dark }) {
       <p style={{ fontSize: 13, color: theme.muted, marginBottom: 24 }}>Find verified recyclers near your location.</p>
       
       <div style={{ display: "flex", gap: 16, height: 450 }}>
-        {/* বাম পাশের হাব লিস্ট প্যানেল */}
+        {/* Hub list of left side */}
         <div style={{ width: 240, flexShrink: 0, borderRadius: 16, background: theme.card, border: `1px solid ${theme.border}`, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           <div style={{ padding: 12, borderBottom: `1px solid ${theme.border}` }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 8, background: dark ? "rgba(255,255,255,0.05)" : "#f9fafb" }}>
@@ -82,15 +82,15 @@ export function MapView({ theme, dark }) {
           </div>
         </div>
 
-        {/* 🗺️ ডান পাশের রিয়াল-টাইম ইন্টারঅ্যাক্টিভ ম্যাপ এরিয়া */}
+        {/* realtime active map area on right side */}
         <div style={{ flex: 1, borderRadius: 16, border: `1px solid ${theme.border}`, overflow: "hidden", zIndex: 1, position: "relative" }}>
           <MapContainer 
             center={mapCenter} 
             zoom={zoomLevel} 
             style={{ width: "100%", height: "100%" }}
-            zoomControl={false} // ক্লিন লুকের জন্য ডিফল্ট জুম বাটন অফ
+            zoomControl={false} // default zoom button for clean look
           >
-            {/* ডার্ক এবং লাইট মুড অনুযায়ী ম্যাপের স্কিন চেঞ্জ হবে */}
+            {/* dark & light mode map screen */}
             <TileLayer
               url={dark 
                 ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" 
@@ -99,15 +99,15 @@ export function MapView({ theme, dark }) {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
             
-            {/* ম্যাপের ভিউ ট্র্যাকিং আপডেট কম্পোনেন্ট */}
+            {/* Map View Tracking Update Component */}
             <ChangeView center={mapCenter} />
 
-            {/* ইউজারের কারেন্ট লোকেশন মার্কার */}
+            {/*User's current location marker */}
             <Marker position={[userLocation.lat, userLocation.lng]} icon={createCustomIcon(E, true)}>
               <Popup><span style={{ fontWeight: 600 }}>You are here</span></Popup>
             </Marker>
 
-            {/* রিসাইক্লিং হাবসমূহের মার্কার */}
+            {/* Recycling hub markers*/}
             {centers.map(c => (
               <Marker key={c.n} position={[c.lat, c.lng]} icon={createCustomIcon("#3B82F6", false)}>
                 <Popup>

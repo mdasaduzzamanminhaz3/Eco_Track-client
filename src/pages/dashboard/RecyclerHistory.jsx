@@ -19,10 +19,9 @@ export function RecyclerHistory({ theme }) {
   const [collectingId, setCollectingId] = useState(null);
   const [weightInput, setWeightInput] = useState("");
 
-  // ডেটা ফেচ করার ফাংশন
 const fetchHistory = useCallback(async () => {
     try {
-      // 🎯 ব্যাকএন্ডকে জানান যে এটি ড্যাশবোর্ড মোড
+      //  dashboard mood
       const res = await authApiClient.get("pickups/?dashboard=true");
       setHistory(res.data);
     } catch (err) {
@@ -36,7 +35,6 @@ const fetchHistory = useCallback(async () => {
     fetchHistory();
   }, [fetchHistory]);
 
-  // ডেটা ক্যালকুলেশন
   const accepted = useMemo(() => history.filter((j) => j.status === "ACCEPTED"), [history]);
   const pending = useMemo(() => history.filter((j) => j.status === "PENDING"), [history]);
   const collected = useMemo(() => history.filter((j) => j.status === "COLLECTED"), [history]);
@@ -45,7 +43,7 @@ const fetchHistory = useCallback(async () => {
     collected.reduce((acc, curr) => acc + (parseFloat(curr.actual_weight) || 0), 0), 
   [collected]);
 
-  // ক্যাটাগরি ডিস্ট্রিবিউশন লজিক
+  // Category distribution logic
   const categoryStats = useMemo(() => {
     return collected.reduce((acc, curr) => {
       const cat = curr.category_detail?.name || "Other";
@@ -54,7 +52,7 @@ const fetchHistory = useCallback(async () => {
     }, {});
   }, [collected]);
 
-  // চার্টের ডেটা ও লেবেল প্রিপারেশন
+  // Preparation of chart data and labels
   const chartData = useMemo(() => collected.map((h) => parseFloat(h.actual_weight) || 0), [collected]);
   const chartLabels = useMemo(() => 
     collected.map((h) => new Date(h.updated_at).toLocaleDateString("en-US", { day: "numeric", month: "short" })), 
@@ -81,7 +79,7 @@ const fetchHistory = useCallback(async () => {
     }
   };
 
-  // 🗺️ গুগল ম্যাপস নেভিগেশন লিংক জেনারেট করার ফাংশন
+  //Function to generate Google Maps navigation links
   const handleViewLocation = (lat, lng) => {
     if (!lat || !lng) {
       return alert("Location coordinates not available for this request.");
@@ -94,7 +92,7 @@ const fetchHistory = useCallback(async () => {
 
   return (
     <div style={{ padding: "24px", color: theme.txt }}>
-      {/* সামারি কার্ডস */}
+      {/* summery cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16, marginBottom: 24 }}>
         {[
           { l: "Accepted", v: accepted.length, c: "#3B82F6" },
@@ -110,7 +108,7 @@ const fetchHistory = useCallback(async () => {
         ))}
       </div>
 
-      {/* চার্ট এবং ক্যাটাগরি ডিস্ট্রিবিউশন সেকশন */}
+      {/* Chart and Category Distribution Section */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16, marginBottom: 24 }}>
         {chartData.length > 0 && (
           <div style={{ background: theme.card, padding: 20, borderRadius: 16, border: `1px solid ${theme.border}` }}>
@@ -161,7 +159,7 @@ const fetchHistory = useCallback(async () => {
             </div>
             
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              {/* 📍 এখানে নতুন লোকেশন বাটনটি যোগ করা হয়েছে */}
+              {/* he new location button has been added here.*/}
               <button 
                 onClick={() => handleViewLocation(job.latitude, job.longitude)}
                 style={{ 

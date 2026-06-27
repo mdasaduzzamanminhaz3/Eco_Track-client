@@ -54,14 +54,13 @@ const useAuth = () => {
 
 const handleAPIError = (error, defaultMessage = "Something went wrong ! Try again") => {
         if (error.response && error.response.data) {
-            // 🎯 ফিক্স: যদি ব্যাকএন্ড থেকে 'detail' মেসেজ আসে তবে সেটা নেবে, না হলে অবজেক্টের প্রথম এররটা দেখাবে
             const data = error.response.data;
             let errorMessage = defaultMessage;
 
             if (data.detail) {
                 errorMessage = data.detail;
             } else if (typeof data === 'object') {
-                // কোনো অবজেক্ট বা অ্যারে আসলে সেটাকে সেফলি স্ট্রিং বানিয়ে দেবে
+                // if an objects comes to array form it will be converted to string
                 errorMessage = Object.values(data).flat().join("\n");
             } else if (typeof data === 'string') {
                 errorMessage = data;
@@ -126,7 +125,7 @@ const handleAPIError = (error, defaultMessage = "Something went wrong ! Try agai
         setError("");
         try {
             const res = await apiClient.post('/auth/users/', userData);
-            console.log(res.data);
+            // console.log(res.data);
             return {success: true, message: "Registration successful ! Please login to continue."};
         } catch (error) {
             return handleAPIError(error, "Registration failed ! Please check your details and try again.");

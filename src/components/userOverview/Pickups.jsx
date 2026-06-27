@@ -15,7 +15,7 @@ const Pickups = ({ theme }) => {
     const fetchPickups = async () => {
       try {
         const res = await authApiClient.get("pickups/");
-        console.log("fetch pickup in overview", res.data);
+        // console.log("fetch pickup in overview", res.data);
         setPickups(res.data);
       } catch (error) {
         console.log("failed pickup", error);

@@ -15,7 +15,7 @@ const StatCards = ({ theme }) => {
     const fetchPickups = async () => {
       try {
         const res = await authApiClient.get("pickups/");
-        console.log("fetch pickup in overview", res.data);
+        // console.log("fetch pickup in overview", res.data);
         setPickups(res.data);
       } catch (error) {
         console.log("failed pickup", error);
@@ -28,7 +28,7 @@ const StatCards = ({ theme }) => {
       try {
         const res = await authApiClient.get("rewards/my-wallet/");
         setWallet(res.data);
-        console.log("Wallet data:", res.data);
+        // console.log("Wallet data:", res.data);
       } catch (err) {
         console.error("Failed to fetch wallet data:", err);
       } finally {

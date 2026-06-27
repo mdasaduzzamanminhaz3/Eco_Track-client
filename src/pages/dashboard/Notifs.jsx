@@ -10,7 +10,7 @@ const fetchNotifications = async () => {
     try{
       const res =await authApiClient.get('notifications/');
       setNotifications(res.data)
-      console.log(res.data);
+      // console.log(res.data);
     }catch(error){
       console.log("Error fetching notifications:", error);
     }

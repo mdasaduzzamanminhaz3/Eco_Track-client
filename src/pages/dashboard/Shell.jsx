@@ -38,7 +38,7 @@ export function Shell({ user, onLogout }) {
   ];
 
   const initials = (user?.name || "U").split(" ").map(w => w[0]).slice(0, 2).join("");
-  console.log("shel user data=========", user);
+  // console.log("shel user data=========", user);
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: theme.bg, fontFamily: "'Inter', system-ui, sans-serif" }}>
       {/* Sidebar */}
@@ -93,7 +93,7 @@ export function Shell({ user, onLogout }) {
             {page === "pickup" && <Pickup theme={theme} dark={dark} />}
             {page === "map" && <MapView theme={theme} dark={dark} />}
             {page === "leaderboard" && <Leaderboard theme={theme} dark={dark} user={user} />}
-            {/* 🎯 চ্যাট কম্পোনেন্টটি তখনই রেন্ডার হবে যখন ইউজার আইডি সাকসেসফুলি চলে আসবে */}
+            {/* The chat component will render only when the user ID is successfully retrieved. */}
 {page === "chat" && (user?.id || user?.pk || user?.user_id) ? (
   <Chat 
     theme={theme} 

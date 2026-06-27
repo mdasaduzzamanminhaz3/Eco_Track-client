@@ -7,25 +7,24 @@ export function Pickup({ theme, dark }) {
   const [step, setStep] = useState(1);
   const [cat, setCat] = useState("");
   const [done, setDone] = useState(false);
-  const [categories, setCategories] = useState([]); // API থেকে আসা ক্যাটাগরি রাখার জন্য
+  const [categories, setCategories] = useState([]); 
 
-  // ফর্ম ডেটা স্টেট
+
   const [formData, setFormData] = useState({
     weight: "",
     notes: "",
     location: "",
-    lat: "4", // ডিফল্ট ভ্যালু হিসেবে রাখলাম
+    lat: "4", // default value
     lng: "2.57",
   });
 
   const E = "#10B981";
 
-  // ক্যাটাগরি ফেচ করার লজিক
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const res = await authApiClient.get("/waste-categories/");
-        setCategories(res.data); // API রেসপন্স অনুযায়ী ডাটা সেট করা
+        setCategories(res.data); 
       } catch (error) {
         console.error("Error fetching categories:", error);
       }
@@ -39,7 +38,7 @@ const handleUseCurrentLocation = async () => {
       async (position) => {
         const { latitude, longitude } = position.coords;
         
-        // স্টেট আগে আপডেট করুন
+        // state update 
         setFormData(prev => ({ ...prev, lat: latitude.toString(), lng: longitude.toString() }));
 
         // এখন এই স্থানাঙ্ক থেকে ঠিকানা বের করার জন্য API কল করুন
@@ -61,7 +60,6 @@ const handleUseCurrentLocation = async () => {
   }
 };
 
-  // সাবমিট করার ফাংশন
   const handleSubmit = async () => {
     try {
       // ল্যাটিটিউড এবং লংগিটিউড ফরম্যাটিং
@@ -80,7 +78,7 @@ const handleUseCurrentLocation = async () => {
       await authApiClient.post("/pickups/", payload);
       setDone(true);
     } catch (error) {
-      console.error("Submission failed:", error.response?.data || error); // এরর ডিটেইলস কনসোলে দেখুন
+      console.error("Submission failed:", error.response?.data || error);
       alert(
         "Failed to submit request. Please ensure location coordinates are valid.",
       );

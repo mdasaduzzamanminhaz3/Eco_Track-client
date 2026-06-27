@@ -15,7 +15,7 @@ const Chart = ({ theme, dark }) => {
       try {
         const res = await authApiClient.get("rewards/my-wallet/");
         setWallet(res.data);
-        console.log("Wallet data:", res.data);
+        // console.log("Wallet data:", res.data);
       } catch (err) {
         console.error("Failed to fetch wallet data:", err);
       } finally {

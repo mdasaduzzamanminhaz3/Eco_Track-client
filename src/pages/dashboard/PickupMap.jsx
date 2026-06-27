@@ -10,7 +10,7 @@ const redMarkerIcon = 'https://raw.githubusercontent.com/pointhi/leaflet-color-m
 const markerShadow = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png';
 
 const PickupMap = ({ pickupLat, pickupLng, pickupAddress, customerName }) => {
-  // ডিফল্ট লোকেশন হিসেবে ঢাকার স্থানাঙ্ক ব্যবহার করা হয়েছে
+  // default location 
   const [userCoords, setUserCoords] = useState([23.8103, 90.4125]); 
   const [distanceInfo, setDistanceInfo] = useState({ distance: "0 KM", duration: "0 Mins" });
   const routingEngineRef = useRef(null);
@@ -19,7 +19,7 @@ const PickupMap = ({ pickupLat, pickupLng, pickupAddress, customerName }) => {
   const destinationCoords = [parseFloat(pickupLat) || 23.8683, parseFloat(pickupLng) || 90.4004];
   const displayName = customerName || "User";
 
-  // ১. লাইভ ট্র্যাকিং লজিক
+  // 1.live tracking logic
   useEffect(() => {
     if (navigator.geolocation) {
       const watchId = navigator.geolocation.watchPosition(
@@ -29,11 +29,11 @@ const PickupMap = ({ pickupLat, pickupLng, pickupAddress, customerName }) => {
         },
         (error) => {
           console.error("Location error:", error.message);
-          // এরর হলে ডিফল্ট লোকেশনই থাকবে
+          // default location
         },
         { 
           enableHighAccuracy: true, 
-          timeout: 30000, // টাইমআউট ৩০ সেকেন্ড করা হয়েছে
+          timeout: 30000, 
           maximumAge: 10000 
         }
       );
@@ -41,7 +41,7 @@ const PickupMap = ({ pickupLat, pickupLng, pickupAddress, customerName }) => {
     }
   }, []);
 
-  // ২. রুট এবং ম্যাপ আপডেট লজিক
+  // 2. route & map update logic
   useEffect(() => {
     if (mapInstanceRef.current && userCoords) {
       if (routingEngineRef.current) {
